@@ -157,6 +157,7 @@ void loop() {
   if(getTemp() < -128) {
     lcd.clear();
     lcd.print("fault sensor!");
+    digitalWrite(controlPin, LOW);
     delay(5000);
   } else {
 
