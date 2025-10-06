@@ -32,11 +32,11 @@ float tempC = 0;
 float sum = 0;
 float globalsum = 0;
 
-const int maxSamples = 200;
+const int maxSamples = 100;
 float tempArray[maxSamples];
 int tempIndex = 0;
 
-const int maxGlobalSamples = 180;
+const int maxGlobalSamples = 250;
 float tempGlobalArray[maxGlobalSamples];
 int tempGlobalIndex = 0;
 
@@ -103,11 +103,7 @@ float getTemp(){
     float tempK = 1.0 / ( (1.0 / T0) + (1.0 / B_COEFFICIENT) * log(R_thermistor / R0) );
     tempC = tempK - 273.15;
     float tempC_rounded = (int)(tempC * 10.0 + 0.5) / 10.0;
-  //   Serial.println("========");
-  // Serial.println(tempC_rounded);
-  // Serial.println("========");
-  // delay(5000);
-  
+
     return tempC_rounded;
 }
 
@@ -158,6 +154,12 @@ void setup() {
 
 void loop() {
 
+  if(getTemp() < -128) {
+    lcd.clear();
+    lcd.print("fault sensor!");
+    delay(5000);
+  } else {
+
   unsigned long currentMillis = millis();
   recordTemperature();
   readButton();
@@ -183,5 +185,5 @@ void loop() {
     lcd.print("C ");
     if(status == 1) {lcd.write(byte(0));} else {lcd.setCursor(14, 1); lcd.print(" "); };
 
-  }
+   } }
 }
