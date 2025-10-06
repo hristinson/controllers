@@ -1,5 +1,7 @@
 #include <LiquidCrystal.h>
 #include <EEPROM.h>
+#include <math.h>
+
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 
 const int analogPin = A1;
@@ -8,6 +10,7 @@ const float R_BALANCE = 10000.0;  // опір резистора балансу 
 const float B_COEFFICIENT = 3950; // коефіцієнт B термістора (зазвичай 3950)
 const float T0 = 298.15;          // температура 25°C у Кельвінах
 const float R0 = 10000.0;         // опір термістора при 25°C
+const char VERSION[8] = "2.0.1"; 
 
 byte checkmark[8] = {
   B00000,
@@ -29,11 +32,11 @@ float tempC = 0;
 float sum = 0;
 float globalsum = 0;
 
-const int maxSamples = 256;
+const int maxSamples = 200;
 float tempArray[maxSamples];
 int tempIndex = 0;
 
-const int maxGlobalSamples = 100;
+const int maxGlobalSamples = 180;
 float tempGlobalArray[maxGlobalSamples];
 int tempGlobalIndex = 0;
 
@@ -99,7 +102,13 @@ float getTemp(){
     // Обчислюємо температуру у Кельвінах за формулою Стейнхарта-Харта (спрощена)
     float tempK = 1.0 / ( (1.0 / T0) + (1.0 / B_COEFFICIENT) * log(R_thermistor / R0) );
     tempC = tempK - 273.15;
-    return tempC;
+    float tempC_rounded = (int)(tempC * 10.0 + 0.5) / 10.0;
+  //   Serial.println("========");
+  // Serial.println(tempC_rounded);
+  // Serial.println("========");
+  // delay(5000);
+  
+    return tempC_rounded;
 }
 
 void setStatus () {
@@ -111,16 +120,15 @@ void setStatus () {
     else
     {
       for (int i = 0; i < maxGlobalSamples; i++) {
-       globalsum += tempGlobalArray[i];
+       globalsum += (int)(tempGlobalArray[i] * 10.0 + 0.5) / 10.0;
     }
 
-    float globalAverage = globalsum / maxGlobalSamples;
-    if (globalAverage < settedTemp - 0.3) {
+    float globalAverageTemp = globalsum / maxGlobalSamples;
+    float globalAverage = (int)(globalAverageTemp * 10.0 + 0.5) / 10.0;
+    if (status == 0 && globalAverage < settedTemp - 0.5) {
       status = 1;  // активовано
-    } else if (globalAverage < settedTemp + 0.3) {
+    } else if (status == 1 && globalAverage > settedTemp + 0.5) {
       status = 0;  // деактивовано
-    } else {
-      status = 0;  // якщо температура >= 30, деактивовано
     }
 
     Serial.println("---------------------------");
@@ -134,9 +142,15 @@ void setStatus () {
 }
 
 void setup() {
+  lcd.begin(16, 2);   
   EEPROM.get(eeAddress, settedTemp);
   Serial.begin(19200);
-  lcd.begin(16, 2);
+  lcd.setCursor(0, 0); 
+  lcd.print("SmartHouse termo");  
+  lcd.setCursor(0, 1); 
+  lcd.print("version: ");
+  lcd.print(VERSION);
+  delay(3000);
   lcd.createChar(0, checkmark); 
   pinMode(controlPin, OUTPUT);  // налаштовуємо пін 3 як вихід
   digitalWrite(controlPin, LOW); // спочатку вимикаємо
@@ -163,7 +177,7 @@ void loop() {
     lcd.print(settedTemp, 1); 
     lcd.print("    "); 
     lcd.setCursor(0, 1); 
-     lcd.print("Actual ");
+    lcd.print("Actual ");
     lcd.print(tempC, 1);
     lcd.print((char)223);
     lcd.print("C ");
