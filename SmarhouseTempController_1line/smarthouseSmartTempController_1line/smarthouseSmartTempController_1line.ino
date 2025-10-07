@@ -158,6 +158,7 @@ void loop() {
     lcd.clear();
     lcd.print("fault sensor!");
     digitalWrite(controlPin, LOW);
+    status = 0;
     delay(5000);
   } else {
 
